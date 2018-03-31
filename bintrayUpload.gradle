@@ -1,0 +1,104 @@
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+Properties properties = new Properties()
+File localProperties = project.rootProject.file('local.properties')
+File developerProperties = project.rootProject.file("developer.properties")
+File projectProperties = project.rootProject.file("project.properties")
+if (localProperties.exists()) {
+    properties.load(localProperties.newDataInputStream())
+}
+if (developerProperties.exists()) {
+    properties.load(developerProperties.newDataInputStream())
+}
+if (projectProperties.exists()) {
+    properties.load(projectProperties.newDataInputStream())
+}
+// 修改为你的版本号
+version = android.defaultConfig.versionName
+// 修改为你的项目的主页
+def siteUrl = properties.getProperty('project.siteUrl')
+// 修改为你的Git仓库的url
+def gitUrl = properties.getProperty('project.gitUrl')
+def description = properties.getProperty('project.description')
+
+def developerId = properties.getProperty('developer.id')
+def developerName = properties.getProperty('developer.name')
+def developerEmail = properties.getProperty('developer.email')
+
+def userName = properties.getProperty("bintray.user")
+def appKey = properties.getProperty("bintray.appKey")
+
+def repoName = properties.getProperty('project.repo')
+def projectName = properties.getProperty('project.name')
+
+group = properties.getProperty('project.groupId')
+
+install {
+    repositories.mavenInstaller {
+        // This generates POM.xml with proper parameters
+        pom {
+            project {
+                packaging 'aar'
+                // Add your description here
+                name description
+                url siteUrl
+                // Set your license
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id developerId
+                        name developerName
+                        email developerEmail
+                    }
+                }
+
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+bintray {
+    user = userName
+    key = appKey
+    configurations = ['archives']
+    pkg {
+        repo = repoName
+        name = projectName //发布到JCenter上的项目名字
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        licenses = ["Apache-2.0"]
+        publish = true
+    }
+}
